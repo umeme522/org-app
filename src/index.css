@@ -1,0 +1,495 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+
+/* --- Premium Desktop-Only Theme Tokens --- */
+:root {
+  --bg-dark: #0a0c12;
+  --bg-dark-accent: #11141d;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --accent-primary: #00ffcc;
+  --accent-secondary: #00bf9a;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 12px 60px rgba(0, 0, 0, 0.6);
+  --font-main: 'Inter', 'Noto Sans JP', sans-serif;
+  --transition-premium: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Premium Glow Effects --- */
+.glow-gold { border: 1px solid rgba(255, 215, 0, 0.4) !important; }
+.glow-silver { border: 1px solid rgba(192, 192, 192, 0.4) !important; }
+.glow-blue { border: 1px solid rgba(0, 255, 204, 0.4) !important; }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: #ffffff;
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* --- Layout --- */
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(circle at 5% 5%, rgba(124, 77, 255, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 95% 95%, rgba(0, 212, 255, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(10, 12, 18, 1) 0%, transparent 100%);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.nav-sidebar {
+  width: 100px;
+  background: rgba(10, 12, 18, 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+  z-index: 20000;
+  transition: var(--transition-premium);
+  box-shadow: 10px 0 50px rgba(0,0,0,0.5);
+}
+
+.nav-logo {
+  margin-bottom: 50px;
+  color: var(--accent-primary);
+  filter: drop-shadow(0 0 20px rgba(124, 77, 255, 0.8));
+}
+
+.nav-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+  align-items: center;
+}
+
+.nav-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-premium);
+  position: relative;
+  gap: 6px;
+}
+
+.nav-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px) scale(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.nav-btn.active {
+  color: #000000;
+  background: var(--accent-primary);
+  border: none;
+}
+
+.nav-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.app-main-layout {
+  display: flex;
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 750px;
+  height: 100%;
+  flex-shrink: 0;
+  background: rgba(10, 12, 18, 0.65);
+  backdrop-filter: blur(40px) saturate(150%);
+  border-right: 1px solid var(--glass-border);
+  transition: var(--transition-premium);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.main-area {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  z-index: 1;
+}
+
+.main-area::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/Antigravity/background_logo.jpg');
+  background-size: 600px;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.profile-sidebar {
+  width: 450px;
+  height: 100%;
+  flex-shrink: 0;
+  background: #1a1d26; 
+  border-left: 1px solid var(--glass-border);
+  z-index: 100;
+  overflow-y: auto;
+  box-shadow: -20px 0 60px rgba(0,0,0,0.7);
+}
+
+.profile-panel {
+  width: 100%;
+  max-width: 450px;
+  height: 100%;
+  padding: 24px;
+  padding-bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  position: relative;
+  color: #ffffff;
+}
+
+.profile-panel-permanent {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- UI Components --- */
+.edit-input, .search-input {
+  width: 100%;
+  padding: 16px 20px;
+  background: #1a1d26 !important; /* 不透明な濃い背景にして確実に文字を見せる */
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 14px;
+  color: #ffffff !important;
+  font-family: var(--font-main);
+  font-size: 1rem;
+  transition: var(--transition-premium);
+}
+
+/* セレクトボックスの選択肢を強制的に白文字・濃い背景にする */
+.edit-input option {
+  background-color: #1a1d26 !important;
+  color: #ffffff !important;
+}
+
+/* 日付選択のアイコンを白くする */
+.edit-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.edit-input:focus, .search-input:focus {
+  outline: none;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.2);
+  background: #1e222e !important;
+}
+
+.edit-input::placeholder, .search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(25px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* --- React Flow Overrides --- */
+.org-chart-wrapper {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 2.5;
+  transition: all 0.4s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--accent-primary);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 8px var(--accent-primary));
+}
+
+.react-flow__controls {
+  background: rgba(10, 12, 18, 0.8) !important;
+  border: 1px solid var(--glass-border) !important;
+  backdrop-filter: blur(20px);
+  border-radius: 16px !important;
+  overflow: hidden;
+  box-shadow: var(--glass-shadow) !important;
+  padding: 4px;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 10px !important;
+  fill: #fff !important;
+  transition: all 0.2s;
+  margin-bottom: 2px;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(255,255,255,0.1) !important;
+  transform: scale(1.1);
+}
+
+/* アクションボタン（プレミアムスタイル） */
+.save-btn {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #00e6e6 100%);
+  color: #000;
+  border: none;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 255, 255, 0.3);
+  transition: var(--transition-premium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.save-btn:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 15px 35px rgba(0, 255, 255, 0.5);
+  filter: brightness(1.15);
+}
+
+.save-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 14px 28px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-premium);
+  backdrop-filter: blur(15px);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.logo-container { position: relative; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
+.app-logo-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 15px rgba(0, 230, 118, 0.5)); animation: logo-glow 4s infinite alternate; }
+@keyframes logo-glow { from { filter: drop-shadow(0 0 8px rgba(0, 230, 118, 0.4)) brightness(1); } to { filter: drop-shadow(0 0 20px rgba(0, 230, 118, 0.7)) brightness(1.3); } }
+
+/* --- Inquiry Modal --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30000;
+}
+
+.inquiry-panel {
+  width: 500px;
+  max-width: 90vw;
+  background: rgba(20, 24, 35, 0.95);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.8);
+}
+
+.inquiry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.inquiry-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: 0.2s;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+.inquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* --- Inquiry List in Sidebar --- */
+.inquiry-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.inquiry-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: var(--transition-premium);
+}
+
+.inquiry-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+}
+
+.inquiry-item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.inquiry-item-name {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.inquiry-item-type {
+  background: rgba(75, 123, 255, 0.2);
+  color: #4B7BFF;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.inquiry-item-message {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.success-message {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.success-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--accent-primary);
+  color: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 20px;
+}
