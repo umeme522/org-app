@@ -322,12 +322,6 @@ const Sidebar_Desktop = ({ members = [], units = [], searchTerm = '', setSearchT
           </div>
         )}
 
-        {activeTab === 'inquiries' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#ffffff', marginBottom: '24px' }}>INQUIRIES</h2>
-            <InquiryList />
-          </div>
-        )}
 
       </div>
     </motion.div>
@@ -442,41 +436,4 @@ const MemberCard = ({ m, onMemberClick }) => {
   );
 };
 
-const InquiryList = () => {
-  const [inquiries, setInquiries] = React.useState([]);
-
-  React.useEffect(() => {
-    fetch('http://localhost:3001/inquiries')
-      .then(res => res.json())
-      .then(data => setInquiries(data))
-      .catch(err => console.error('Error fetching inquiries:', err));
-  }, []);
-
-  if (inquiries.length === 0) {
-    return (
-      <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '40px' }}>
-        <p>問い合わせはありません</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="inquiry-list-container">
-      {inquiries.map((inquiry, idx) => (
-        <div key={idx} className="inquiry-item">
-          <div className="inquiry-item-header">
-            <span className="inquiry-item-name">{inquiry.name}</span>
-            <span className="inquiry-item-type">
-              {inquiry.type === 'bug' ? '不具合' : inquiry.type === 'request' ? '要望' : 'その他'}
-            </span>
-          </div>
-          <div className="inquiry-item-message">{inquiry.message}</div>
-          <div style={{ fontSize: '0.65rem', marginTop: '8px', textAlign: 'right', opacity: 0.5 }}>
-            {new Date(inquiry.timestamp).toLocaleString()}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
 export default Sidebar_Desktop;

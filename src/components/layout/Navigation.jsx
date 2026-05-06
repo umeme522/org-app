@@ -28,14 +28,9 @@ const Navigation = ({
           <span className="nav-label">検索</span>
         </button>
 
-        <button onClick={() => { setIsSidebarOpen(true); setSidebarTab('stats'); }} className={`nav-btn ${isSidebarOpen && sidebarTab === 'stats' ? 'active' : ''}`} style={{ width: '100%' }} title="統計データ">
+        <button onClick={() => { setIsSidebarOpen(true); setSidebarTab('stats'); }} className={`nav-btn ${isSidebarOpen && sidebarTab === 'stats' ? 'active' : ''}`} style={{ width: '64px', height: '64px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} title="組織統計">
           <BarChart3 size={24} />
-          <span className="nav-label">データ</span>
-        </button>
-
-        <button onClick={() => { setIsSidebarOpen(true); setSidebarTab('inquiries'); }} className={`nav-btn ${isSidebarOpen && sidebarTab === 'inquiries' ? 'active' : ''}`} style={{ width: '64px', height: '64px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} title="問い合わせログ">
-          <MessageSquare size={24} />
-          <span className="nav-label">ログ</span>
+          <span className="nav-label">統計</span>
         </button>
 
         <div style={{ margin: '12px 0', borderTop: '1px solid rgba(255,255,255,0.1)', width: '40px' }} />
