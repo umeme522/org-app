@@ -157,7 +157,7 @@ html, body, #root {
   background-size: 600px;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.1;
+  opacity: 0.2;
   pointer-events: none;
   z-index: -1;
 }
