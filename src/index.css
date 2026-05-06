@@ -156,7 +156,6 @@ html, body, #root {
   background-image: url('./assets/background_logo.jpg');
   background-size: 600px;
   background-position: center;
-  background-attachment: fixed;
   background-repeat: no-repeat;
   opacity: 0.1;
   pointer-events: none;
