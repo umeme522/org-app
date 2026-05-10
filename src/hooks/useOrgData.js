@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { mockData } from '../data/mockData';
 
-const STORAGE_VERSION = 'v5';
-const UNITS_STORAGE_KEY = `antigravity_org_units_${STORAGE_VERSION}`;
-const MEMBERS_STORAGE_KEY = `antigravity_org_members_${STORAGE_VERSION}`;
-const LEGACY_STORAGE_KEYS = ['org-units', 'org-members', 'antigravity_org_data_v4'];
+const STORAGE_KEY = 'antigravity_org_data_v4'; // バージョンを上げて強制リセット
 
 export const useOrgData = () => {
   const [units, setUnits] = useState(mockData.units || []);
@@ -13,56 +10,61 @@ export const useOrgData = () => {
 
   // データの初期化と同期ロジック
   useEffect(() => {
-    LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
-
-    const savedUnits = localStorage.getItem(UNITS_STORAGE_KEY);
-    const savedMembers = localStorage.getItem(MEMBERS_STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY);
     let finalMembers = [...mockData.members];
     let finalUnits = [...mockData.units];
 
-    if (savedUnits) {
+    if (saved) {
       try {
-        const parsedUnits = JSON.parse(savedUnits);
-        if (Array.isArray(parsedUnits)) {
-          finalUnits = parsedUnits;
-        }
-      } catch (e) {
-        console.error('Unit data sync error', e);
-      }
-    }
+        const parsed = JSON.parse(saved);
 
-    if (savedMembers) {
-      try {
-        const parsedMembers = JSON.parse(savedMembers);
-        if (Array.isArray(parsedMembers)) {
-          finalMembers = parsedMembers.map(m => ({
-            ...m,
-            gender: m.gender || "男性"
-          }));
+        // 文字化けチェック または 旧バージョンの架空データIDが含まれていたらリセット
+        if (saved.includes('譛') || saved.includes('驛') || saved.includes('m_dept2_chief') || saved.includes('m_top')) {
+          console.warn('Old or corrupted data detected, resetting.');
+          localStorage.removeItem(STORAGE_KEY);
+        } else {
+          if (parsed.members) {
+            const memberMap = new Map();
+            // まずは mockData をベースにセット
+            finalMembers.forEach(m => memberMap.set(m.id, m));
+            // その後、保存されている編集済みデータで上書きする
+            parsed.members.forEach(m => memberMap.set(m.id, m));
+
+            finalMembers = Array.from(memberMap.values()).map(m => ({
+              ...m,
+              gender: m.gender || "男性"
+            }));
+          }
+          if (parsed.units) {
+            const unitMap = new Map();
+            finalUnits.forEach(u => unitMap.set(u.id, u));
+            parsed.units.forEach(u => unitMap.set(u.id, u));
+            finalUnits = Array.from(unitMap.values());
+          }
         }
       } catch (e) {
-        console.error('Member data sync error', e);
+        console.error('Data sync error', e);
       }
     }
 
     setMembers(finalMembers);
     setUnits(finalUnits);
-    localStorage.setItem(UNITS_STORAGE_KEY, JSON.stringify(finalUnits));
-    localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(finalMembers));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ units: finalUnits, members: finalMembers }));
   }, []);
 
   const saveToGitHub = useCallback(async (currentUnits, currentMembers) => {
     if (isSaving) return;
     setIsSaving(true);
-    localStorage.setItem(UNITS_STORAGE_KEY, JSON.stringify(currentUnits));
-    localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(currentMembers));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ units: currentUnits, members: currentMembers }));
+
+    const dataPayload = JSON.stringify({ units: currentUnits, members: currentMembers }, null, 2);
 
     try {
       // 1. まずローカルの同期サーバー（Port 3001）を試す
       const localResponse = await fetch('http://localhost:3001/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: JSON.stringify({ units: currentUnits, members: currentMembers }, null, 2) })
+        body: JSON.stringify({ data: dataPayload })
       });
 
       if (localResponse.ok) {
