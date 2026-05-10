@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { mockData } from '../data/mockData';
 
-const STORAGE_KEY = 'antigravity_org_data_v5'; // バージョンを上げて強制リセット
+const STORAGE_KEY = 'antigravity_org_data_v5';
+const OLD_KEYS = ['antigravity_org_data_v4', 'antigravity_org_data_v3', 'antigravity_org_data_v2'];
 
 export const useOrgData = () => {
   const [units, setUnits] = useState(mockData.units || []);
@@ -13,6 +14,25 @@ export const useOrgData = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     let finalMembers = [...mockData.members];
     let finalUnits = [...mockData.units];
+
+    // 旧バージョン(v4, v3, v2)から写真データを引き継ぐ
+    const photoMap = new Map();
+    OLD_KEYS.forEach(oldKey => {
+      try {
+        const oldSaved = localStorage.getItem(oldKey);
+        if (oldSaved) {
+          const oldParsed = JSON.parse(oldSaved);
+          if (oldParsed.members) {
+            oldParsed.members.forEach(m => {
+              // base64の実写真のみ引き継ぐ（dicebear URLは除外）
+              if (m.photo && m.photo.startsWith('data:') && !photoMap.has(m.id)) {
+                photoMap.set(m.id, m.photo);
+              }
+            });
+          }
+        }
+      } catch(e) {}
+    });
 
     if (saved) {
       try {
@@ -32,7 +52,11 @@ export const useOrgData = () => {
 
             finalMembers = Array.from(memberMap.values()).map(m => ({
               ...m,
-              gender: m.gender || "男性"
+              gender: m.gender || "男性",
+              // 現在の写真がdicebear（デフォルト）で、旧バージョンに実写真があれば引き継ぐ
+              photo: (!m.photo || !m.photo.startsWith('data:')) && photoMap.has(m.id)
+                ? photoMap.get(m.id)
+                : m.photo
             }));
           }
           if (parsed.units) {
@@ -45,6 +69,12 @@ export const useOrgData = () => {
       } catch (e) {
         console.error('Data sync error', e);
       }
+    } else {
+      // v5が初回の場合、旧バージョンの写真を反映
+      finalMembers = finalMembers.map(m => ({
+        ...m,
+        photo: photoMap.has(m.id) ? photoMap.get(m.id) : m.photo
+      }));
     }
 
     setMembers(finalMembers);
