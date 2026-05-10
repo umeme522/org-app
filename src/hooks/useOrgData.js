@@ -9,14 +9,9 @@ export const useOrgData = () => {
   const [members, setMembers] = useState(mockData.members || []);
   const [isSaving, setIsSaving] = useState(false);
 
-  // データの初期化と同期ロジック
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    let finalMembers = [...mockData.members];
-    let finalUnits = [...mockData.units];
-
-    // 旧バージョン(v4, v3, v2)から写真データを引き継ぐ
-    const photoMap = new Map();
+    // --- Step 1: 旧バージョンからすべてのデータを収集（写真・経歴含む） ---
+    const legacyMemberMap = new Map();
     OLD_KEYS.forEach(oldKey => {
       try {
         const oldSaved = localStorage.getItem(oldKey);
@@ -24,9 +19,8 @@ export const useOrgData = () => {
           const oldParsed = JSON.parse(oldSaved);
           if (oldParsed.members) {
             oldParsed.members.forEach(m => {
-              // base64の実写真のみ引き継ぐ（dicebear URLは除外）
-              if (m.photo && m.photo.startsWith('data:') && !photoMap.has(m.id)) {
-                photoMap.set(m.id, m.photo);
+              if (!legacyMemberMap.has(m.id)) {
+                legacyMemberMap.set(m.id, m);
               }
             });
           }
@@ -34,51 +28,92 @@ export const useOrgData = () => {
       } catch(e) {}
     });
 
+    // --- Step 2: 現在のバージョン(v5)のデータを読み込む ---
+    const saved = localStorage.getItem(STORAGE_KEY);
+    let savedMemberMap = new Map();
+    let savedUnitMap = new Map();
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-
-        // 文字化けチェック または 旧バージョンの架空データIDが含まれていたらリセット
-        if (saved.includes('譛') || saved.includes('驛') || saved.includes('m_dept2_chief') || saved.includes('m_top')) {
-          console.warn('Old or corrupted data detected, resetting.');
-          localStorage.removeItem(STORAGE_KEY);
-        } else {
+        // 文字化けや旧バージョンの不正データは無視
+        if (!saved.includes('譛') && !saved.includes('驛') && !saved.includes('m_dept2_chief')) {
           if (parsed.members) {
-            const memberMap = new Map();
-            // まずは mockData をベースにセット
-            finalMembers.forEach(m => memberMap.set(m.id, m));
-            // その後、保存されている編集済みデータで上書きする
-            parsed.members.forEach(m => memberMap.set(m.id, m));
-
-            finalMembers = Array.from(memberMap.values()).map(m => ({
-              ...m,
-              gender: m.gender || "男性",
-              // 現在の写真がdicebear（デフォルト）で、旧バージョンに実写真があれば引き継ぐ
-              photo: (!m.photo || !m.photo.startsWith('data:')) && photoMap.has(m.id)
-                ? photoMap.get(m.id)
-                : m.photo
-            }));
+            parsed.members.forEach(m => savedMemberMap.set(m.id, m));
           }
           if (parsed.units) {
-            const unitMap = new Map();
-            finalUnits.forEach(u => unitMap.set(u.id, u));
-            parsed.units.forEach(u => unitMap.set(u.id, u));
-            finalUnits = Array.from(unitMap.values());
+            parsed.units.forEach(u => savedUnitMap.set(u.id, u));
           }
         }
-      } catch (e) {
-        console.error('Data sync error', e);
+      } catch(e) {
+        console.error('Data parse error', e);
       }
-    } else {
-      // v5が初回の場合、旧バージョンの写真を反映
-      finalMembers = finalMembers.map(m => ({
-        ...m,
-        photo: photoMap.has(m.id) ? photoMap.get(m.id) : m.photo
-      }));
     }
+
+    // --- Step 3: マージロジック（ユーザーデータを最優先） ---
+    // mockDataの全メンバーをベースにして、保存データで上書き
+    const finalMemberMap = new Map();
+
+    mockData.members.forEach(mockMember => {
+      const saved = savedMemberMap.get(mockMember.id);
+      const legacy = legacyMemberMap.get(mockMember.id);
+
+      if (saved) {
+        // localStorage(v5)のデータが最優先
+        finalMemberMap.set(mockMember.id, {
+          ...mockMember,  // mockDataの新フィールド（careerHistory等）をベースに
+          ...saved,       // localStorageの編集済みデータで上書き
+          // 写真: 実写真（base64）があれば絶対に保持
+          photo: (saved.photo && saved.photo.startsWith('data:'))
+            ? saved.photo
+            : (legacy && legacy.photo && legacy.photo.startsWith('data:'))
+              ? legacy.photo
+              : saved.photo || mockMember.photo,
+          // 経歴: localStorageにあればそちらを優先、なければmockDataの新データを使う
+          careerHistory: (saved.careerHistory && saved.careerHistory.length > 0)
+            ? saved.careerHistory
+            : (mockMember.careerHistory && mockMember.careerHistory.length > 0)
+              ? mockMember.careerHistory
+              : [],
+          gender: saved.gender || mockMember.gender || "男性"
+        });
+      } else if (legacy) {
+        // v5にはないが旧バージョンにある場合（写真付きで引き継ぎ）
+        finalMemberMap.set(mockMember.id, {
+          ...mockMember,
+          ...legacy,
+          photo: (legacy.photo && legacy.photo.startsWith('data:'))
+            ? legacy.photo
+            : mockMember.photo,
+          careerHistory: (legacy.careerHistory && legacy.careerHistory.length > 0)
+            ? legacy.careerHistory
+            : (mockMember.careerHistory || []),
+          gender: legacy.gender || mockMember.gender || "男性"
+        });
+      } else {
+        // 完全新規（mockDataのみ）
+        finalMemberMap.set(mockMember.id, mockMember);
+      }
+    });
+
+    // localStorageにあってmockDataにないメンバー（手動追加したメンバー）も保持
+    savedMemberMap.forEach((m, id) => {
+      if (!finalMemberMap.has(id)) {
+        finalMemberMap.set(id, m);
+      }
+    });
+
+    const finalMembers = Array.from(finalMemberMap.values());
+
+    // ユニット（部署）のマージ
+    const finalUnitMap = new Map();
+    mockData.units.forEach(u => finalUnitMap.set(u.id, u));
+    savedUnitMap.forEach((u, id) => finalUnitMap.set(id, u));
+    const finalUnits = Array.from(finalUnitMap.values());
 
     setMembers(finalMembers);
     setUnits(finalUnits);
+    // 最新の状態をv5に保存
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ units: finalUnits, members: finalMembers }));
   }, []);
 
@@ -90,7 +125,6 @@ export const useOrgData = () => {
     const dataPayload = JSON.stringify({ units: currentUnits, members: currentMembers }, null, 2);
 
     try {
-      // 1. まずローカルの同期サーバー（Port 3001）を試す
       const localResponse = await fetch('http://localhost:3001/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,7 +136,6 @@ export const useOrgData = () => {
         return;
       }
 
-      // 2. ローカルサーバーが使えない場合は GitHub Dispatch API (Fallback)
       const response = await fetch('https://api.github.com/repos/umeme522/Antigravity/dispatches', {
         method: 'POST',
         headers: {
