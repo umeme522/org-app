@@ -26,14 +26,28 @@ const getPositionColor = (pos) => {
 
 const calculateAge = (birthDate) => {
   if (!birthDate) return '未設定';
-  const birth = new Date(birthDate);
+  
+  let dateStr = String(birthDate).replace(/\//g, '-');
+  
+  // 19950522 形式（8桁数字）の場合、1995-05-22 に変換
+  if (/^\d{8}$/.test(dateStr)) {
+    dateStr = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+  }
+  
+  const birth = new Date(dateStr);
   if (isNaN(birth.getTime())) return '未設定';
+  
   const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+  const birthClean = new Date(birth.getFullYear(), birth.getMonth(), birth.getDate());
+  const todayClean = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  
+  let age = todayClean.getFullYear() - birthClean.getFullYear();
+  const m = todayClean.getMonth() - birthClean.getMonth();
+  
+  if (m < 0 || (m === 0 && todayClean.getDate() < birthClean.getDate())) {
     age--;
   }
+  
   return `${age} 歳`;
 };
 
@@ -68,8 +82,21 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
 
   if (!member) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+      const handleChange = (e) => {
+    let { name, value } = e.target;
+    
+    if (name === 'birthDate') {
+      // 数字のみ抽出
+      const nums = value.replace(/\D/g, '').slice(0, 8);
+      if (nums.length <= 4) {
+        value = nums;
+      } else if (nums.length <= 6) {
+        value = `${nums.slice(0, 4)}/${nums.slice(4)}`;
+      } else {
+        value = `${nums.slice(0, 4)}/${nums.slice(4, 6)}/${nums.slice(6)}`;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { mockData } from '../data/mockData';
 
-const STORAGE_KEY = 'antigravity_org_data_v4'; // バージョンを上げて強制リセット
+const STORAGE_KEY = 'antigravity_org_data_v5'; // バージョンを上げて強制リセット
 
 export const useOrgData = () => {
   const [units, setUnits] = useState(mockData.units || []);
