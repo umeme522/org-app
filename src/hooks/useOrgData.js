@@ -81,12 +81,19 @@ export const useOrgData = () => {
         const serverPhoto = photoData[mockMember.id]; // サーバー上の写真
 
         if (saved) {
-          // localStorage(v5)のデータが最優先
-          const resolvedPhoto = resolvePhoto(saved.photo, legacy?.photo, serverPhoto, mockMember.photo);
+          // タイムスタンプを比較 (サーバー vs ローカル)
+          const mockUpdated = mockMember.photoUpdatedAt || 0;
+          const savedUpdated = saved.photoUpdatedAt || 0;
+          
+          // サーバー(mockData/photoData.json経由)の写真が新しい場合、ローカルの写真を無視する
+          const preferServer = mockUpdated > savedUpdated && serverPhoto;
+          const resolvedPhoto = preferServer ? serverPhoto : resolvePhoto(saved.photo, legacy?.photo, serverPhoto, mockMember.photo);
+
           finalMemberMap.set(mockMember.id, {
             ...mockMember,  // mockDataの新フィールド（careerHistory等）をベースに
             ...saved,       // localStorageの編集済みデータで上書き
             photo: resolvedPhoto,
+            photoUpdatedAt: preferServer ? mockUpdated : savedUpdated,
             // 経歴: localStorageにあればそちらを優先、なければmockDataの新データを使う
             careerHistory: (saved.careerHistory && saved.careerHistory.length > 0)
               ? saved.careerHistory
@@ -102,6 +109,7 @@ export const useOrgData = () => {
             ...mockMember,
             ...legacy,
             photo: resolvedPhoto,
+            photoUpdatedAt: legacy.photoUpdatedAt || mockMember.photoUpdatedAt || 0,
             careerHistory: (legacy.careerHistory && legacy.careerHistory.length > 0)
               ? legacy.careerHistory
               : (mockMember.careerHistory || []),
@@ -174,7 +182,9 @@ export const useOrgData = () => {
         })
       });
       if (response.ok) {
-        alert('保存しました！全員に反映されるまで約1分かかります。');
+        // sync-serverなしで保存された場合、写真はGitHubに送られない（容量オーバー等で送れていないか、mockData.jsだけ更新される）
+        // そのため警告を出す
+        alert('基本データは保存されましたが、写真は他PCと共有されません。\n（写真を共有するには、ローカルで sync-server を起動してから保存してください）\n\nデータが全員に反映されるまで約1分かかります。');
       }
     } catch (e) {
       console.error('Save failed', e);
@@ -185,7 +195,11 @@ export const useOrgData = () => {
 
   const updateMember = (updatedMember) => {
     if (!updatedMember) return;
-    const memberToSave = { ...updatedMember };
+    const memberToSave = { 
+      ...updatedMember,
+      // 写真が更新された可能性があるためタイムスタンプを更新
+      photoUpdatedAt: Date.now() 
+    };
     delete memberToSave.isNew;
 
     setMembers(prev => {
@@ -205,6 +219,7 @@ export const useOrgData = () => {
       lastName: '', firstName: '', reading: '', position: '',
       unitId: defaultUnitId || '',
       photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`,
+      photoUpdatedAt: Date.now(),
       birthDate: '', joinDate: new Date().getFullYear().toString(),
       employeeId: '', birthplace: '', careerHistory: [], isNew: true
     };
