@@ -5,6 +5,7 @@ const { execSync } = require('child_process');
 
 const PORT = 3001;
 const DATA_FILE = path.join(__dirname, 'src', 'data', 'mockData.js');
+const PHOTO_FILE = path.join(__dirname, 'public', 'photoData.json');
 
 const server = http.createServer((req, res) => {
   // CORS headers
@@ -24,19 +25,46 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const { data } = JSON.parse(body);
-        
-        // 1. Write to file
-        const content = `export const mockData = ${data};`;
-        fs.writeFileSync(DATA_FILE, content);
-        
-        // 2. Git commit and push (if in a git repo)
+        const parsed = JSON.parse(data);
+
+        // --- 写真データを分離 ---
+        const photoMap = {};
+        const membersWithoutPhotos = (parsed.members || []).map(m => {
+          const memberCopy = { ...m };
+          // base64写真データがあれば、photoDataに移動
+          if (m.photo && m.photo.startsWith('data:')) {
+            photoMap[m.id] = m.photo;
+            memberCopy.photo = `__photo__${m.id}`; // プレースホルダーに置き換え
+          }
+          return memberCopy;
+        });
+
+        // 既存のphotoDataを読み込んでマージ（既存写真を消さない）
+        let existingPhotos = {};
         try {
-          execSync('git add src/data/mockData.js');
-          execSync('git commit -m "Update personnel data via local proxy"');
+          if (fs.existsSync(PHOTO_FILE)) {
+            existingPhotos = JSON.parse(fs.readFileSync(PHOTO_FILE, 'utf8'));
+          }
+        } catch (e) {}
+        const mergedPhotos = { ...existingPhotos, ...photoMap };
+
+        // 1. photoData.json に写真データを保存
+        fs.writeFileSync(PHOTO_FILE, JSON.stringify(mergedPhotos));
+        console.log(`Saved ${Object.keys(mergedPhotos).length} photos to photoData.json`);
+
+        // 2. mockData.js にはテキストデータのみ保存（写真URL or プレースホルダー）
+        const dataForMockData = { units: parsed.units, members: membersWithoutPhotos };
+        const content = `export const mockData = ${JSON.stringify(dataForMockData, null, 2)};`;
+        fs.writeFileSync(DATA_FILE, content);
+
+        // 3. Git commit and push
+        try {
+          execSync('git add src/data/mockData.js public/photoData.json');
+          execSync('git commit -m "Update personnel data and photos via local proxy"');
           execSync('git push origin main');
           console.log('Successfully saved and pushed to GitHub');
         } catch (gitError) {
-          console.error('Git operation failed, but file was saved locally:', gitError.message);
+          console.error('Git operation failed, but files were saved locally:', gitError.message);
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

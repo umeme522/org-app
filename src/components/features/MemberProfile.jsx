@@ -258,10 +258,43 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
                 alt="Preview" 
                 style={{ width: '100px', height: '100px', borderRadius: '50%', border: `3px solid ${getPositionColor(formData.position)}`, objectFit: 'cover' }} 
               />
+              {/* 写真追加ボタン（右下） */}
               <label style={{ position: 'absolute', bottom: '0', right: '0', background: 'var(--accent-primary)', color: 'white', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Plus size={16} />
                 <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
               </label>
+              {/* 写真削除ボタン（左下）— カスタム写真がある場合のみ表示 */}
+              {formData.photo && formData.photo.startsWith('data:') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const defaultPhoto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.id || Date.now()}`;
+                    setFormData(prev => ({ ...prev, photo: defaultPhoto }));
+                  }}
+                  style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '0',
+                    background: '#FF4B4B',
+                    color: 'white',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid rgba(26, 32, 44, 0.95)',
+                    width: '30px',
+                    height: '30px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#ff1a1a'; e.currentTarget.style.transform = 'scale(1.15)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = '#FF4B4B'; e.currentTarget.style.transform = 'scale(1)'; }}
+                  title="写真を削除"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           </div>
 

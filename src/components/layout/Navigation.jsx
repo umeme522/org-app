@@ -1,4 +1,4 @@
-import { Network, Users, Search, Share2, BarChart3, Download, HelpCircle, MessageSquare } from 'lucide-react';
+import { Network, Users, Search, Share2, BarChart3, Download, HelpCircle, MessageSquare, Upload } from 'lucide-react';
 
 const Navigation = ({ 
   isSidebarOpen, 
@@ -6,7 +6,8 @@ const Navigation = ({
   sidebarTab,
   setSidebarTab,
   onExport,
-  onInquiry
+  onInquiry,
+  onSyncPhotos
 }) => {
   return (
     <div className="nav-sidebar">
@@ -43,6 +44,16 @@ const Navigation = ({
         >
           <Download size={24} />
           <span className="nav-label">出力</span>
+        </button>
+
+        <button 
+          onClick={onSyncPhotos} 
+          className="nav-btn" 
+          style={{ width: '64px', height: '64px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#4CAF50' }} 
+          title="全データ・写真をサーバーに同期"
+        >
+          <Upload size={24} />
+          <span className="nav-label">同期</span>
         </button>
 
         <button 

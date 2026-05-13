@@ -33,7 +33,8 @@ function App() {
     units,
     members,
     updateMember,
-    createNewMember
+    createNewMember,
+    syncAllPhotos
   } = useOrgData();
 
   const handleMemberClick = (member) => {
@@ -121,6 +122,7 @@ function App() {
         setSidebarTab={setSidebarTab}
         onExport={handleExportData}
         onInquiry={() => setIsInquiryOpen(true)}
+        onSyncPhotos={syncAllPhotos}
       />
 
       <div className={isMobile ? "app-content-mobile" : "app-main-layout"}>
