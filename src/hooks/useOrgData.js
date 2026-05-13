@@ -20,61 +20,6 @@ const fetchPhotoData = async () => {
   return {};
 };
 
-const GITHUB_REPO = 'umeme522/Antigravity';
-
-const utf8ToBase64 = (str) => {
-  const bytes = new TextEncoder().encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-};
-
-const updateGitHubFile = async (filePath, contentStr, commitMessage, isJsonMerge = false) => {
-  const token = import.meta.env.VITE_GITHUB_TOKEN || '';
-  if (!token) return false;
-
-  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`;
-  let sha = null;
-  let existingObj = {};
-
-  try {
-    const res = await fetch(url, {
-      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      sha = data.sha;
-      if (isJsonMerge && data.download_url) {
-        const dlRes = await fetch(data.download_url + '?t=' + Date.now());
-        if (dlRes.ok) existingObj = await dlRes.json();
-      }
-    }
-  } catch (e) {
-    console.error('Fetch file failed', e);
-  }
-
-  let finalContentStr = contentStr;
-  if (isJsonMerge) {
-    const newObj = JSON.parse(contentStr);
-    const merged = { ...existingObj, ...newObj };
-    finalContentStr = JSON.stringify(merged);
-  }
-
-  const putRes = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
-    body: JSON.stringify({
-      message: commitMessage,
-      content: utf8ToBase64(finalContentStr),
-      sha: sha,
-      branch: 'main'
-    })
-  });
-  return putRes.ok;
-};
-
 export const useOrgData = () => {
   const [units, setUnits] = useState(mockData.units || []);
   const [members, setMembers] = useState(mockData.members || []);
@@ -211,34 +156,38 @@ export const useOrgData = () => {
     setIsSaving(true);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ units: currentUnits, members: currentMembers }));
 
+    const dataPayload = JSON.stringify({ units: currentUnits, members: currentMembers }, null, 2);
+
     try {
-      // 1. 写真と基本データを分離
-      const photoMap = {};
-      const membersWithoutPhotos = currentMembers.map(m => {
-        const copy = { ...m };
-        if (m.photo && m.photo.startsWith('data:')) {
-          photoMap[m.id] = m.photo;
-          copy.photo = `__photo__${m.id}`; // プレースホルダーに置き換え
-        }
-        return copy;
+      const localResponse = await fetch('http://localhost:3001/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: dataPayload })
       });
 
-      const dataForMockData = { units: currentUnits, members: membersWithoutPhotos };
-      const mockDataContent = `export const mockData = ${JSON.stringify(dataForMockData, null, 2)};`;
-      const photoDataContent = JSON.stringify(photoMap);
+      if (localResponse.ok) {
+        console.log('Saved via local sync server');
+        return;
+      }
 
-      // 2. ブラウザからGitHubのファイルを直接書き換え (完全自動化)
-      const photoOk = await updateGitHubFile('sosikizu-app/public/photoData.json', photoDataContent, 'Update photos from browser (auto)', true);
-      const dataOk = await updateGitHubFile('sosikizu-app/src/data/mockData.js', mockDataContent, 'Update personnel data from browser (auto)', false);
-
-      if (photoOk && dataOk) {
-        alert('写真を含めて全データを自動保存しました！\n（GitHub Actionsによる反映まで約1〜2分かかります）');
-      } else {
-        alert('保存中にエラーが発生しました。\nネットワークまたはGitHub Tokenの設定を確認してください。');
+      const response = await fetch('https://api.github.com/repos/umeme522/Antigravity/dispatches', {
+        method: 'POST',
+        headers: {
+          'Authorization': `token ${import.meta.env.VITE_GITHUB_TOKEN || ''}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+        body: JSON.stringify({
+          event_type: 'update-data',
+          client_payload: { data: dataPayload }
+        })
+      });
+      if (response.ok) {
+        // sync-serverなしで保存された場合、写真はGitHubに送られない（容量オーバー等で送れていないか、mockData.jsだけ更新される）
+        // そのため警告を出す
+        alert('基本データは保存されましたが、写真は他PCと共有されません。\n（写真を共有するには、ローカルで sync-server を起動してから保存してください）\n\nデータが全員に反映されるまで約1分かかります。');
       }
     } catch (e) {
       console.error('Save failed', e);
-      alert('保存処理に失敗しました。');
     } finally {
       setIsSaving(false);
     }
@@ -276,10 +225,30 @@ export const useOrgData = () => {
     };
   };
 
-  // 全データ（写真含む）を強制的に再保存する関数
+  // 全データ（写真含む）をsync-serverに一括同期する関数
   const syncAllPhotos = useCallback(async () => {
-    await saveToGitHub(units, members);
-  }, [saveToGitHub, units, members]);
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const dataPayload = JSON.stringify({ units, members }, null, 2);
+      const localResponse = await fetch('http://localhost:3001/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: dataPayload })
+      });
+
+      if (localResponse.ok) {
+        alert('全データ（写真含む）をサーバーに同期しました！\nGitHub Pagesに反映されるまで約2分かかります。');
+      } else {
+        alert('同期に失敗しました。sync-serverが起動しているか確認してください。');
+      }
+    } catch (e) {
+      alert('同期に失敗しました。sync-serverが起動しているか確認してください。\nターミナルで node sync-server.cjs を実行してください。');
+      console.error('Sync failed', e);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, units, members]);
 
   return { units, members, updateMember, createNewMember, isSaving, syncAllPhotos };
 };

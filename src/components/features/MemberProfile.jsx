@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Briefcase, Hash, User, Clock, Award, Plus, Trash2, History, MapPin } from 'lucide-react';
+import { X, Calendar, Briefcase, Hash, User, Clock, Award, Plus, Trash2, History, MapPin, Mail } from 'lucide-react';
 
 const POSITIONS = [
   '支店長',
@@ -64,6 +64,7 @@ const calculateYearsOfService = (joinYear) => {
 const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPermanent }) => {
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [formData, setFormData] = useState(member || {});
 
   useEffect(() => {
@@ -256,44 +257,64 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
               <img 
                 src={formData.photo} 
                 alt="Preview" 
-                style={{ width: '100px', height: '100px', borderRadius: '50%', border: `3px solid ${getPositionColor(formData.position)}`, objectFit: 'cover' }} 
+                onDoubleClick={() => setIsAdminMode(prev => !prev)}
+                style={{ width: '100px', height: '100px', borderRadius: '50%', border: `3px solid ${getPositionColor(formData.position)}`, objectFit: 'cover', cursor: 'pointer' }} 
+                title="ダブルクリックで管理者モード（直接登録）切替"
               />
-              {/* 写真追加ボタン（右下） */}
-              <label style={{ position: 'absolute', bottom: '0', right: '0', background: 'var(--accent-primary)', color: 'white', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Plus size={16} />
-                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
-              </label>
-              {/* 写真削除ボタン（左下）— カスタム写真がある場合のみ表示 */}
-              {formData.photo && formData.photo.startsWith('data:') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const defaultPhoto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.id || Date.now()}`;
-                    setFormData(prev => ({ ...prev, photo: defaultPhoto }));
+              
+              {isAdminMode ? (
+                <>
+                  {/* 写真追加ボタン（右下） */}
+                  <label style={{ position: 'absolute', bottom: '0', right: '0', background: 'var(--accent-primary)', color: 'white', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Plus size={16} />
+                    <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
+                  </label>
+                  {/* 写真削除ボタン（左下）— カスタム写真がある場合のみ表示 */}
+                  {formData.photo && formData.photo.startsWith('data:') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const defaultPhoto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.id || Date.now()}`;
+                        setFormData(prev => ({ ...prev, photo: defaultPhoto }));
+                      }}
+                      style={{
+                        position: 'absolute',
+                        bottom: '0',
+                        left: '0',
+                        background: '#FF4B4B',
+                        color: 'white',
+                        padding: '6px',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid rgba(26, 32, 44, 0.95)',
+                        width: '30px',
+                        height: '30px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = '#ff1a1a'; e.currentTarget.style.transform = 'scale(1.15)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = '#FF4B4B'; e.currentTarget.style.transform = 'scale(1)'; }}
+                      title="写真を削除"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </>
+              ) : (
+                /* 一般ユーザー向け：写真変更依頼ボタン（右下） */
+                <a 
+                  href={`mailto:admin@example.com?subject=【組織図アプリ】写真変更依頼&body=${encodeURIComponent(`氏名: ${fullName}\n社員番号: ${member.employeeId || ''}\n\n※こちらに新しい写真を添付して送信してください。`)}`}
+                  style={{ 
+                    position: 'absolute', bottom: '0', right: '-10px', background: '#4B7BFF', color: 'white', padding: '8px', 
+                    borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    textDecoration: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', border: '2px solid rgba(26, 32, 44, 0.95)'
                   }}
-                  style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    left: '0',
-                    background: '#FF4B4B',
-                    color: 'white',
-                    padding: '6px',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid rgba(26, 32, 44, 0.95)',
-                    width: '30px',
-                    height: '30px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#ff1a1a'; e.currentTarget.style.transform = 'scale(1.15)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#FF4B4B'; e.currentTarget.style.transform = 'scale(1)'; }}
-                  title="写真を削除"
+                  title="管理者に写真変更をメールで依頼する"
                 >
-                  <Trash2 size={14} />
-                </button>
+                  <Mail size={16} />
+                </a>
               )}
             </div>
           </div>
