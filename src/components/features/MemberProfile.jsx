@@ -257,9 +257,14 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
               <img 
                 src={formData.photo} 
                 alt="Preview" 
-                onDoubleClick={() => setIsAdminMode(prev => !prev)}
+                onClick={(e) => {
+                  // 4回クリックで管理者モード切替
+                  if (e.detail === 4) {
+                    setIsAdminMode(prev => !prev);
+                  }
+                }}
                 style={{ width: '100px', height: '100px', borderRadius: '50%', border: `3px solid ${getPositionColor(formData.position)}`, objectFit: 'cover', cursor: 'pointer' }} 
-                title="ダブルクリックで管理者モード（直接登録）切替"
+                title="4回連続クリックで管理者モード（直接登録）切替"
               />
               
               {isAdminMode ? (
@@ -305,7 +310,7 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
               ) : (
                 /* 一般ユーザー向け：写真変更依頼ボタン（右下） */
                 <a 
-                  href={`mailto:admin@example.com?subject=【組織図アプリ】写真変更依頼&body=${encodeURIComponent(`氏名: ${fullName}\n社員番号: ${member.employeeId || ''}\n\n※こちらに新しい写真を添付して送信してください。`)}`}
+                  href={`mailto:umeahra.y@g.konoike.net?subject=【組織図アプリ】写真変更依頼&body=${encodeURIComponent(`氏名: ${fullName}\n社員番号: ${member.employeeId || ''}\n\n※こちらに新しい写真を添付して送信してください。`)}`}
                   style={{ 
                     position: 'absolute', bottom: '0', right: '-10px', background: '#4B7BFF', color: 'white', padding: '8px', 
                     borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
