@@ -436,6 +436,23 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
           <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
             <button onClick={handleSave} className="save-btn" style={{ flex: 2 }}>変更を保存</button>
             <button onClick={() => setIsEditing(false)} className="cancel-btn">戻る</button>
+            {isAdminMode && (
+              <button 
+                onClick={() => {
+                  if (window.confirm(`${fullName} さんを組織図から削除してもよろしいですか？`)) {
+                    onDelete(member.id);
+                    onClose();
+                  }
+                }} 
+                style={{ 
+                  background: '#FF4B4B', color: 'white', border: 'none', borderRadius: '12px', padding: '0 15px', cursor: 'pointer', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                }}
+                title="人物を削除"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -445,7 +462,14 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
               <img 
                 src={member.photo} 
                 alt={fullName} 
-                style={{ width: '120px', height: '120px', borderRadius: '50%', border: `4px solid ${roleColor}`, objectFit: 'cover', boxShadow: `0 0 20px ${roleColor}44` }} 
+                onDoubleClick={() => setIsAdminMode(prev => !prev)}
+                onClick={(e) => {
+                  // 4回クリックで管理者モード切替
+                  if (e.detail === 4) {
+                    setIsAdminMode(prev => !prev);
+                  }
+                }}
+                style={{ width: '120px', height: '120px', borderRadius: '50%', border: `4px solid ${roleColor}`, objectFit: 'cover', boxShadow: `0 0 20px ${roleColor}44`, cursor: 'pointer' }} 
               />
               <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: '#1a1d26', padding: '6px', borderRadius: '50%', border: `2px solid ${roleColor}` }}>
                 <User size={16} color={roleColor} />
@@ -492,14 +516,31 @@ const MemberProfile = ({ member, unit, units, onUpdate, onDelete, onClose, isPer
             )}
           </div>
 
-          <div style={{ marginTop: '40px', paddingBottom: '20px' }}>
+          <div style={{ marginTop: '40px', paddingBottom: '20px', display: 'flex', gap: '12px' }}>
             <button 
               onClick={() => setIsEditing(true)}
               className="save-btn"
-              style={{ width: '100%', background: 'linear-gradient(135deg, #4B7BFF, #7c4dff)', color: 'white', border: 'none' }}
+              style={{ flex: 1, background: 'linear-gradient(135deg, #4B7BFF, #7c4dff)', color: 'white', border: 'none' }}
             >
               プロフィールを編集する
             </button>
+            {isAdminMode && (
+              <button 
+                onClick={() => {
+                  if (window.confirm(`${fullName} さんを組織図から削除してもよろしいですか？`)) {
+                    onDelete(member.id);
+                    onClose();
+                  }
+                }} 
+                style={{ 
+                  background: '#FF4B4B', color: 'white', border: 'none', borderRadius: '12px', padding: '0 15px', cursor: 'pointer', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                }}
+                title="人物を削除"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
           </div>
         </>
       )}
